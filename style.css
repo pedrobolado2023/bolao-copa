@@ -601,7 +601,6 @@ body {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    min-width: 700px;
 }
 
 .ranking-table th, 
@@ -1592,6 +1591,25 @@ tr:nth-child(3) .rank-badge {
 
     .cart-actions {
         justify-content: space-between;
+    }
+
+    /* Mobile styles for classification table */
+    .ranking-table th, 
+    .ranking-table td {
+        padding: 10px 8px;
+        font-size: 0.82rem;
+    }
+    
+    .ranking-table th:first-child,
+    .ranking-table td:first-child {
+        padding-left: 8px;
+        width: 36px;
+    }
+
+    .ranking-table th:last-child,
+    .ranking-table td:last-child {
+        padding-right: 8px;
+        width: 100px;
     }
 }
 
