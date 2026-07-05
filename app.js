@@ -465,28 +465,37 @@ function updateCountdownTimers() {
         const targetStr = timer.getAttribute("data-target");
         const targetDate = new Date(targetStr).getTime();
         
-        function update() {
-            const now = new Date().getTime();
-            // A contagem regressiva encerra 15 minutos antes do início
-            const diff = (targetDate - 15 * 60 * 1000) - now;
-            
-            if (diff <= 0) {
-                timer.innerHTML = '<i data-lucide="lock"></i> Fechado';
-                lucide.createIcons();
-                return;
+        const now = new Date().getTime();
+        // A contagem regressiva encerra 15 minutos antes do início
+        const diff = (targetDate - 15 * 60 * 1000) - now;
+        
+        if (diff <= 0) {
+            // Encontra o card do jogo e tranca os inputs na hora
+            const card = timer.closest(".game-card");
+            if (card && card.classList.contains("status-open")) {
+                card.className = "game-card status-locked";
+                const badge = card.querySelector(".status-badge");
+                if (badge) {
+                    badge.outerHTML = `<span class="status-badge locked"><i data-lucide="lock"></i> Fechado</span>`;
+                }
+                const inputs = card.querySelectorAll("input");
+                inputs.forEach(input => input.disabled = true);
+                const plusBtn = card.querySelector(".btn-add-prediction");
+                if (plusBtn) plusBtn.remove();
             }
-            
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            
-            const valueSpan = timer.querySelector(".timer-value");
-            if (valueSpan) {
-                valueSpan.textContent = `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
-            }
+            timer.outerHTML = `<div class="game-date"><i data-lucide="play-circle"></i> Em andamento</div>`;
+            lucide.createIcons();
+            return;
         }
         
-        update();
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        const valueSpan = timer.querySelector(".timer-value");
+        if (valueSpan) {
+            valueSpan.textContent = `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+        }
     });
 }
 
@@ -1248,6 +1257,9 @@ document.addEventListener("DOMContentLoaded", () => {
     renderGames();
     renderRanking();
     renderPixInfoPanel();
+
+    // Inicia atualização automática dos cronômetros a cada 1 segundo
+    setInterval(updateCountdownTimers, 1000);
 
     // Check if the rules have been accepted
     const rulesAccepted = localStorage.getItem("bolao_rules_accepted");
