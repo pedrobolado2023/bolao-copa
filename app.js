@@ -594,6 +594,20 @@ function renderRanking() {
             ? `<span class="pix-status-badge paid"><i data-lucide="check-circle"></i> Confirmado</span>`
             : `<span class="pix-status-badge pending"><i data-lucide="clock"></i> Pendente</span>`;
         
+        // Busca todos os palpites deste participante
+        const userBets = bets.filter(b => b.participantName.trim().toUpperCase() === part.name);
+        const placarHTML = userBets.map(b => {
+            const game = games.find(g => g.id === b.gameId);
+            if (game) {
+                return `<div class="participant-bet-row" style="margin-bottom: 4px; font-size: 0.85rem; color: var(--text-primary);">
+                    <strong>${game.teamA} ${b.betScoreA} x ${b.betScoreB} ${game.teamB}</strong>
+                </div>`;
+            }
+            return `<div class="participant-bet-row" style="margin-bottom: 4px; font-size: 0.85rem; color: var(--text-primary);">
+                <strong>${b.betScoreA} x ${b.betScoreB}</strong>
+            </div>`;
+        }).join("");
+
         const row = document.createElement("tr");
         row.innerHTML = `
             <td>
@@ -604,11 +618,12 @@ function renderRanking() {
                     <span style="border-bottom: 1px dashed var(--accent-yellow);">${part.name}</span> ${index === 0 ? '👑' : ''}
                 </div>
             </td>
-            <td class="points-cell">${part.points}</td>
-            <td class="stat-cell">${part.exacts}</td>
-            <td class="stat-cell">${part.diffs}</td>
-            <td class="stat-cell">${part.wins}</td>
-            <td>${pixBadgeHTML}</td>
+            <td>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    ${placarHTML || '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhum palpite</span>'}
+                </div>
+            </td>
+            <td style="text-align: center;">${pixBadgeHTML}</td>
         `;
         rankingBody.appendChild(row);
     });
