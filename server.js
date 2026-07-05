@@ -123,15 +123,10 @@ app.post("/api/pix/create", async (req, res) => {
 
     const idempotencyKey = uuidv4();
 
-    // Expiration date in exactly 5 minutes (ISO-8601 format)
-    const expireDate = new Date(Date.now() + 5 * 60 * 1000);
-    const dateOfExpiration = expireDate.toISOString();
-
     const payload = {
       transaction_amount: parseFloat(amount.toFixed(2)),
       payment_method_id: "pix",
       description: description || `Bolão da Copa 2026 - ${name}`,
-      date_of_expiration: dateOfExpiration,
       payer: {
         email: email,
         first_name: name.split(" ")[0] || name,
