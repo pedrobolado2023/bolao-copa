@@ -216,6 +216,12 @@
                         <p class="help-text">Necessário para gerar o recibo oficial do Mercado Pago.</p>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="checkoutQuantity">Quantidade de Apostas (Cotas/Bilhetes):</label>
+                        <input type="number" id="checkoutQuantity" min="1" max="100" value="1" required>
+                        <p class="help-text">Escolha quantas apostas deseja fazer com esse mesmo grupo de palpites (o valor do PIX será multiplicado e serão geradas entradas individuais no ranking).</p>
+                    </div>
+                    
                     <button class="btn btn-success btn-block" id="generatePixBtn">
                         <i data-lucide="qr-code"></i> Gerar PIX
                     </button>

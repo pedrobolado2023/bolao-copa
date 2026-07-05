@@ -51,7 +51,7 @@ let mpToken = localStorage.getItem("bolao_mp_token") || DEFAULT_MP_TOKEN;
 let manualPixKey = localStorage.getItem("bolao_manual_pix_key") || "financeiro@empresa.com";
 let isSimulatorMode = localStorage.getItem("bolao_simulator_mode") !== null
     ? localStorage.getItem("bolao_simulator_mode") === "true"
-    : (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    : false;
 let mockPaymentApproved = false;
 
 // Local storage session for the user's name
@@ -331,11 +331,17 @@ function renderGames() {
 
         if (loggedUserName) {
             const nameUpper = loggedUserName.trim().toUpperCase();
-            const existingPaidBet = bets.find(b => b.gameId === game.id && b.participantName.trim().toUpperCase() === nameUpper);
-            if (existingPaidBet && participantsPix[nameUpper] === true) {
-                userHasPaidBet = true;
-                paidBetA = existingPaidBet.betScoreA;
-                paidBetB = existingPaidBet.betScoreB;
+            const existingPaidBet = bets.find(b => {
+                const pName = b.participantName.trim().toUpperCase();
+                return b.gameId === game.id && (pName === nameUpper || pName.startsWith(nameUpper + " #"));
+            });
+            if (existingPaidBet) {
+                const pNameUpper = existingPaidBet.participantName.trim().toUpperCase();
+                if (participantsPix[pNameUpper] === true) {
+                    userHasPaidBet = true;
+                    paidBetA = existingPaidBet.betScoreA;
+                    paidBetB = existingPaidBet.betScoreB;
+                }
             }
         }
 
@@ -640,10 +646,14 @@ function renderCheckoutSummary() {
     const summaryList = document.getElementById("checkoutSummaryList");
     const summaryTotalBets = document.getElementById("summaryTotalBets");
     const checkoutTotalText = document.getElementById("checkoutTotalText");
+    const qtyInput = document.getElementById("checkoutQuantity");
+    const qtyVal = parseInt(qtyInput ? qtyInput.value : 1) || 1;
     
     summaryList.innerHTML = "";
     const betKeys = Object.keys(tempBets);
-    summaryTotalBets.textContent = betKeys.length;
+    
+    // Total de apostas = quantidade de palpites no carrinho * multiplicador de cotas
+    summaryTotalBets.textContent = betKeys.length * qtyVal;
     
     betKeys.forEach(gameId => {
         const game = games.find(g => g.id === gameId);
@@ -659,7 +669,7 @@ function renderCheckoutSummary() {
         }
     });
     
-    const total = betKeys.length * pricePerGame;
+    const total = betKeys.length * pricePerGame * qtyVal;
     checkoutTotalText.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
 }
 
@@ -742,7 +752,7 @@ async function checkMpPaymentStatus(paymentId) {
 }
 
 // Start polling status loop
-function startPaymentPolling(paymentId, name, email) {
+function startPaymentPolling(paymentId, name, email, quantity = 1) {
     if (pollingIntervalId) {
         clearInterval(pollingIntervalId);
     }
@@ -760,27 +770,32 @@ function startPaymentPolling(paymentId, name, email) {
                 localStorage.setItem("bolao_user_name", name);
                 localStorage.setItem("bolao_user_email", email);
                 
-                // Commit temporary bets into the database
-                Object.values(tempBets).forEach(tBet => {
-                    const existingBetIndex = bets.findIndex(b => b.gameId === tBet.gameId && b.participantName.trim().toUpperCase() === name.toUpperCase());
+                // Commit temporary bets into the database multiple times if quantity > 1
+                for (let i = 1; i <= quantity; i++) {
+                    const participantSuffix = quantity > 1 ? ` #${i}` : "";
+                    const finalParticipantName = (name + participantSuffix).toUpperCase();
                     
-                    const newBet = {
-                        id: existingBetIndex !== -1 ? bets[existingBetIndex].id : "b-" + Date.now() + "-" + Math.random().toString(36).substring(2, 5),
-                        gameId: tBet.gameId,
-                        participantName: name.toUpperCase(),
-                        betScoreA: tBet.betScoreA,
-                        betScoreB: tBet.betScoreB
-                    };
+                    Object.values(tempBets).forEach(tBet => {
+                        const existingBetIndex = bets.findIndex(b => b.gameId === tBet.gameId && b.participantName.trim().toUpperCase() === finalParticipantName);
+                        
+                        const newBet = {
+                            id: existingBetIndex !== -1 ? bets[existingBetIndex].id : "b-" + Date.now() + "-" + Math.random().toString(36).substring(2, 5),
+                            gameId: tBet.gameId,
+                            participantName: finalParticipantName,
+                            betScoreA: tBet.betScoreA,
+                            betScoreB: tBet.betScoreB
+                        };
+                        
+                        if (existingBetIndex !== -1) {
+                            bets[existingBetIndex] = newBet;
+                        } else {
+                            bets.push(newBet);
+                        }
+                    });
                     
-                    if (existingBetIndex !== -1) {
-                        bets[existingBetIndex] = newBet;
-                    } else {
-                        bets.push(newBet);
-                    }
-                });
-                
-                // Set payment confirmation
-                participantsPix[name.toUpperCase()] = true;
+                    // Set payment confirmation
+                    participantsPix[finalParticipantName] = true;
+                }
                 
                 saveToLocalStorage();
                 
@@ -1256,17 +1271,19 @@ document.addEventListener("DOMContentLoaded", () => {
         updateCartBar();
     });
 
-    // 6. Checkout button handlers
-    const checkoutModal = document.getElementById("checkoutModal");
-    const checkoutBtn = document.getElementById("checkoutBtn");
-    const closeCheckoutBtn = document.getElementById("closeCheckoutBtn");
-    const generatePixBtn = document.getElementById("generatePixBtn");
+    const checkoutQtyInput = document.getElementById("checkoutQuantity");
 
     checkoutBtn.addEventListener("click", () => {
+        if (checkoutQtyInput) checkoutQtyInput.value = 1;
         renderCheckoutSummary();
         showCheckoutStep("checkoutFormStep");
         checkoutModal.classList.add("active");
     });
+
+    if (checkoutQtyInput) {
+        checkoutQtyInput.addEventListener("input", renderCheckoutSummary);
+        checkoutQtyInput.addEventListener("change", renderCheckoutSummary);
+    }
 
     closeCheckoutBtn.addEventListener("click", () => {
         checkoutModal.classList.remove("active");
@@ -1279,6 +1296,7 @@ document.addEventListener("DOMContentLoaded", () => {
     generatePixBtn.addEventListener("click", async () => {
         const nameVal = document.getElementById("checkoutName").value.trim();
         const emailVal = document.getElementById("checkoutEmail").value.trim();
+        const qtyVal = parseInt(checkoutQtyInput ? checkoutQtyInput.value : 1) || 1;
 
         if (nameVal === "") {
             showToast("Por favor, preencha o seu nome.", "error");
@@ -1291,9 +1309,14 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        if (qtyVal < 1) {
+            showToast("A quantidade mínima de apostas é 1.", "error");
+            return;
+        }
+
         // Calculate value
         const betCount = Object.keys(tempBets).length;
-        const totalValue = betCount * pricePerGame;
+        const totalValue = betCount * pricePerGame * qtyVal;
 
         // Show polling screen with loader overlay active
         showCheckoutStep("checkoutPixStep");
@@ -1315,7 +1338,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("checkoutQrLoading").style.display = "none";
             
             // Start listening status
-            startPaymentPolling(paymentId, nameVal, emailVal);
+            startPaymentPolling(paymentId, nameVal, emailVal, qtyVal);
             showToast("Código PIX gerado com sucesso!", "success");
             
             const simulateSuccessBtn = document.getElementById("simulateSuccessBtn");
@@ -1386,7 +1409,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loggedUserName = "";
             loggedUserEmail = "";
             tempBets = {};
-            isSimulatorMode = true;
+            isSimulatorMode = false;
             mockPaymentApproved = false;
             
             setupMockDataIfEmpty();
