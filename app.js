@@ -119,7 +119,7 @@ async function loadDataFromDatabase() {
             
             participantsPix = {};
             bets.forEach(b => {
-                participantsPix[b.participantName] = true;
+                participantsPix[b.participantName.trim().toUpperCase()] = true;
             });
             localStorage.setItem("bolao_participants_pix", JSON.stringify(participantsPix));
         }
