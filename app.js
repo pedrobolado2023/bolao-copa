@@ -57,6 +57,7 @@ let mockPaymentApproved = false;
 // Local storage session for the user's name
 let loggedUserName = localStorage.getItem("bolao_user_name") || "";
 let loggedUserEmail = localStorage.getItem("bolao_user_email") || "";
+let loggedUserWhatsapp = localStorage.getItem("bolao_user_whatsapp") || "";
 
 // Temporary Cart/Checkout state
 let tempBets = {}; // Keyed by predictionId: { predictionId, gameId, betScoreA, betScoreB }
@@ -735,7 +736,7 @@ function showCheckoutStep(stepId) {
 }
 
 // Trigger payment call to Mercado Pago API (via backend para evitar CORS)
-async function createMercadoPagoPixPayment(name, email, value) {
+async function createMercadoPagoPixPayment(name, email, value, whatsapp) {
     if (isSimulatorMode) {
         mockPaymentApproved = false;
         // Simulate minor API delay for visual consistency
@@ -745,7 +746,7 @@ async function createMercadoPagoPixPayment(name, email, value) {
             point_of_interaction: {
                 transaction_data: {
                     qr_code: "00020126580014br.gov.bcb.pix2536" + manualPixKey + "520400005303986540" + value.toFixed(2) + "5802BR5913Arena Bolao6009Sao Paulo62070503***6304",
-                    qr_code_base64: "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABgCl8PAAAABlBMVEUAAAD///+l2Z/dAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAnklEQVRIie2WsQ7DIAxFXyVSpUqnSpUqlSpVKpUqVSpVqtT//xESpUqVSpUqlSpVKlUqlSpVKpUqVSpV/v9FhMv4MEC73S6n0+n0u9tuf98A8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw//j4Hk6KxW24B90AAAAASUVORK5CYII="
+                    qr_code_base64: "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABgCl8PAAAABlBMVEUAAAD///+l2Z/dAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAnklEQVRIie2WsQ7DIAxFXyVSpUqnSpUqlSpVKpUqVSpVqtT//xESpUqVSpUqlSpVKlUqlSpVKlUqlSpV/v9FhMv4MEC73S6n0+n0u9tuf98A8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw//j4Hk6KxW24B90AAAAASUVORK5CYII="
                 }
             },
             status: "pending"
@@ -759,8 +760,10 @@ async function createMercadoPagoPixPayment(name, email, value) {
         body: JSON.stringify({
             name: name,
             email: email,
+            whatsapp: whatsapp || "",
             amount: value,
-            description: `Bolão da Copa 2026 - ${name}`
+            description: `Bolão da Copa 2026 - ${name}`,
+            bets: Object.values(tempBets)
         })
     });
 
@@ -800,7 +803,7 @@ async function checkMpPaymentStatus(paymentId) {
 }
 
 // Start polling status loop
-function startPaymentPolling(paymentId, name, email) {
+function startPaymentPolling(paymentId, name, email, whatsapp) {
     if (pollingIntervalId) {
         clearInterval(pollingIntervalId);
     }
@@ -815,8 +818,10 @@ function startPaymentPolling(paymentId, name, email) {
                 // Save user details
                 loggedUserName = name;
                 loggedUserEmail = email;
+                loggedUserWhatsapp = whatsapp;
                 localStorage.setItem("bolao_user_name", name);
                 localStorage.setItem("bolao_user_email", email);
+                localStorage.setItem("bolao_user_whatsapp", whatsapp);
                 
                 // Determine max ticket index in tempBets to check if we need suffixes (#1, #2, ...)
                 let maxIndex = 0;
@@ -1143,11 +1148,13 @@ document.addEventListener("DOMContentLoaded", () => {
     renderRanking();
     renderPixInfoPanel();
 
-    // Fill name and email inputs if user previously logged/purchased
+    // Fill name, email and whatsapp inputs if user previously logged/purchased
     const nameInput = document.getElementById("checkoutName");
     const emailInput = document.getElementById("checkoutEmail");
+    const whatsappInput = document.getElementById("checkoutWhatsapp");
     if (loggedUserName) nameInput.value = loggedUserName;
     if (loggedUserEmail) emailInput.value = loggedUserEmail;
+    if (loggedUserWhatsapp) whatsappInput.value = loggedUserWhatsapp;
 
     // Load Admin variables on admin panel load
     document.getElementById("adminPriceInput").value = pricePerGame;
@@ -1342,9 +1349,15 @@ document.addEventListener("DOMContentLoaded", () => {
     generatePixBtn.addEventListener("click", async () => {
         const nameVal = document.getElementById("checkoutName").value.trim();
         const emailVal = document.getElementById("checkoutEmail").value.trim();
+        const whatsappVal = document.getElementById("checkoutWhatsapp").value.trim();
 
         if (nameVal === "") {
             showToast("Por favor, preencha o seu nome.", "error");
+            return;
+        }
+
+        if (whatsappVal === "") {
+            showToast("Por favor, preencha o seu WhatsApp.", "error");
             return;
         }
 
@@ -1364,7 +1377,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             // Call API
-            const payment = await createMercadoPagoPixPayment(nameVal, emailVal, totalValue);
+            const payment = await createMercadoPagoPixPayment(nameVal, emailVal, totalValue, whatsappVal);
             
             const qrBase64 = payment.point_of_interaction.transaction_data.qr_code_base64;
             const qrCopiaCola = payment.point_of_interaction.transaction_data.qr_code;
@@ -1378,7 +1391,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("checkoutQrLoading").style.display = "none";
             
             // Start listening status
-            startPaymentPolling(paymentId, nameVal, emailVal);
+            startPaymentPolling(paymentId, nameVal, emailVal, whatsappVal);
             showToast("Código PIX gerado com sucesso!", "success");
             
             const simulateSuccessBtn = document.getElementById("simulateSuccessBtn");

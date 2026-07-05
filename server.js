@@ -14,6 +14,7 @@ const express = require("express");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,22 @@ const PORT = process.env.PORT || 3000;
 // ==========================================
 // CONFIGURAÇÕES
 // ==========================================
+
+// Supabase Connection Settings
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://xftllvnwnkgecjfsppsd.supabase.co";
+const SUPABASE_KEY = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmdGxsdm53bmtnZWNqZnNwcHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODcxMTUsImV4cCI6MjA5MzU2MzExNX0.VHV8OvLQvpZyS_fY16NuoNUtwc9FQH8M3KikvQk2dYU";
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_KEY) {
+  try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log("[INFO] Supabase client initialized successfully!");
+  } catch (err) {
+    console.error("[ERRO] Falha ao inicializar o cliente do Supabase:", err.message);
+  }
+} else {
+  console.warn("[AVISO] SUPABASE_URL ou SUPABASE_KEY não configurados. Integração com Supabase desativada.");
+}
 
 // O token fica APENAS no servidor — nunca exposto ao navegador.
 // Configure via variável de ambiente no EasyPanel:
@@ -85,7 +102,7 @@ app.use(express.static(path.join(__dirname)));
  */
 app.post("/api/pix/create", async (req, res) => {
   try {
-    const { name, email, amount, description } = req.body;
+    const { name, email, whatsapp, amount, description, bets } = req.body;
 
     // Validações básicas
     if (!name || !email || !amount) {
@@ -164,6 +181,44 @@ app.post("/api/pix/create", async (req, res) => {
       `[OK] Pagamento PIX criado: ID ${mpData.id} | Status: ${mpData.status}`
     );
 
+    // Salvar no Supabase
+    if (supabase) {
+      try {
+        const { error: partErr } = await supabase
+          .from("bolao_participantes")
+          .insert({
+            name: name,
+            whatsapp: whatsapp || "",
+            email: email,
+            payment_id: String(mpData.id),
+            payment_status: mpData.status,
+            amount: parseFloat(amount.toFixed(2))
+          });
+
+        if (partErr) {
+          console.error("[SUPABASE ERRO PARTICIPANTE]", partErr.message);
+        } else if (bets && Array.isArray(bets)) {
+          const palpitesPayload = bets.map(b => ({
+            payment_id: String(mpData.id),
+            participant_name: name,
+            game_id: b.gameId,
+            bet_score_a: parseInt(b.betScoreA) || 0,
+            bet_score_b: parseInt(b.betScoreB) || 0
+          }));
+
+          const { error: palpitesErr } = await supabase
+            .from("bolao_palpites")
+            .insert(palpitesPayload);
+
+          if (palpitesErr) {
+            console.error("[SUPABASE ERRO PALPITES]", palpitesErr.message);
+          }
+        }
+      } catch (dbErr) {
+        console.error("[SUPABASE ERRO CONEXAO]", dbErr.message);
+      }
+    }
+
     res.json({
       success: true,
       paymentId: String(mpData.id),
@@ -221,6 +276,9 @@ app.get("/api/pix/status/:paymentId", async (req, res) => {
       });
     }
 
+    // Sync status with Supabase
+    await updateSupabasePaymentStatus(mpData.id, mpData.status);
+
     res.json({
       success: true,
       paymentId: String(mpData.id),
@@ -264,12 +322,35 @@ app.post("/api/webhook/mercadopago", async (req, res) => {
       console.log(
         `[WEBHOOK] Pagamento ${data.id} - Status: ${payment.status} - Valor: R$ ${payment.transaction_amount}`
       );
-      // Aqui você pode salvar em banco de dados, enviar email, etc.
+      
+      // Atualizar no Supabase
+      await updateSupabasePaymentStatus(payment.id, payment.status);
     } catch (err) {
       console.error("[WEBHOOK ERRO]", err.message);
     }
   }
 });
+
+/**
+ * Função auxiliar para atualizar o status do pagamento no Supabase
+ */
+async function updateSupabasePaymentStatus(paymentId, status) {
+  if (!supabase) return;
+  try {
+    const { error } = await supabase
+      .from("bolao_participantes")
+      .update({ payment_status: status })
+      .eq("payment_id", String(paymentId));
+
+    if (error) {
+      console.error(`[SUPABASE ERRO UPDATE STATUS] ID: ${paymentId} | Error:`, error.message);
+    } else {
+      console.log(`[SUPABASE OK] Status do pagamento ${paymentId} atualizado para: ${status}`);
+    }
+  } catch (err) {
+    console.error("[SUPABASE ERRO UPDATE CONEXAO]", err.message);
+  }
+}
 
 /**
  * GET /health
