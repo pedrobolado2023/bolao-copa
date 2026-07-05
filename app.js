@@ -93,61 +93,7 @@ let isAdminLoggedIn = false;
 // INITIAL DATABASE POPULATION (Mock data)
 // ==========================================
 function setupMockDataIfEmpty() {
-    if (games.length === 0) {
-        const now = new Date();
-        
-        // Game 1: Starts in 15 minutes (Open for betting)
-        const dateOpen = new Date(now.getTime() + 15 * 60 * 1000);
-        
-        // Game 2: Started 2 hours ago (Closed for betting, not finalized)
-        const dateClosed = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-        
-        // Game 3: Ended yesterday (Finalized)
-        const dateFinished = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-        games = [
-            {
-                id: "mock-g1",
-                teamA: "Brasil",
-                teamB: "Argentina",
-                dateTime: dateOpen.toISOString().slice(0, 16),
-                scoreA: null,
-                scoreB: null
-            },
-            {
-                id: "mock-g2",
-                teamA: "França",
-                teamB: "Inglaterra",
-                dateTime: dateClosed.toISOString().slice(0, 16),
-                scoreA: null,
-                scoreB: null
-            },
-            {
-                id: "mock-g3",
-                teamA: "Alemanha",
-                teamB: "Espanha",
-                dateTime: dateFinished.toISOString().slice(0, 16),
-                scoreA: 2,
-                scoreB: 1
-            }
-        ];
-
-        bets = [
-            { id: "mock-b1", gameId: "mock-g3", participantName: "PEDRO SILVA", betScoreA: 2, betScoreB: 1 }, // Exact (10)
-            { id: "mock-b2", gameId: "mock-g3", participantName: "ANA SOUZA", betScoreA: 3, betScoreB: 2 },   // Winner + Diff (7)
-            { id: "mock-b3", gameId: "mock-g3", participantName: "LUCAS LIMA", betScoreA: 1, betScoreB: 0 },  // Winner only (5)
-            { id: "mock-b4", gameId: "mock-g3", participantName: "CARLA COSTA", betScoreA: 2, betScoreB: 3 }  // Errou, mas acertou gols Alemanha (2)
-        ];
-
-        participantsPix = {
-            "PEDRO SILVA": true,
-            "ANA SOUZA": true,
-            "LUCAS LIMA": false,
-            "CARLA COSTA": true
-        };
-
-        saveToLocalStorage();
-    }
+    // Banco de dados inicia limpo - apenas jogos cadastrados pelo administrador serão exibidos
 }
 
 function saveToLocalStorage() {
