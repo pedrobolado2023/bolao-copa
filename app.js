@@ -96,6 +96,41 @@ function setupMockDataIfEmpty() {
     // Banco de dados inicia limpo - apenas jogos cadastrados pelo administrador serão exibidos
 }
 
+async function loadDataFromDatabase() {
+    try {
+        const gamesRes = await fetch(`${BACKEND_URL}/api/games`);
+        if (gamesRes.ok) {
+            const serverGames = await gamesRes.json();
+            games = serverGames.map(g => ({
+                id: g.id,
+                teamA: g.team_a,
+                teamB: g.team_b,
+                dateTime: g.date_time,
+                scoreA: g.score_a,
+                scoreB: g.score_b
+            }));
+            localStorage.setItem("bolao_games", JSON.stringify(games));
+        }
+
+        const betsRes = await fetch(`${BACKEND_URL}/api/bets`);
+        if (betsRes.ok) {
+            bets = await betsRes.json();
+            localStorage.setItem("bolao_bets", JSON.stringify(bets));
+            
+            participantsPix = {};
+            bets.forEach(b => {
+                participantsPix[b.participantName] = true;
+            });
+            localStorage.setItem("bolao_participants_pix", JSON.stringify(participantsPix));
+        }
+
+        renderGames();
+        renderRanking();
+    } catch (err) {
+        console.error("Erro ao carregar dados do servidor:", err);
+    }
+}
+
 function saveToLocalStorage() {
     localStorage.setItem("bolao_games", JSON.stringify(games));
     localStorage.setItem("bolao_bets", JSON.stringify(bets));
@@ -978,7 +1013,7 @@ function renderAdminBets() {
     lucide.createIcons();
 }
 
-window.finalizeGame = function(gameId) {
+window.finalizeGame = async function(gameId) {
     const inputA = document.getElementById(`final-a-${gameId}`);
     const inputB = document.getElementById(`final-b-${gameId}`);
     const valA = inputA.value.trim();
@@ -989,43 +1024,104 @@ window.finalizeGame = function(gameId) {
         return;
     }
 
-    const gameIndex = games.findIndex(g => g.id === gameId);
-    if (gameIndex !== -1) {
-        games[gameIndex].scoreA = parseInt(valA);
-        games[gameIndex].scoreB = parseInt(valB);
-        showToast(`Placar oficial salvo: ${games[gameIndex].teamA} ${valA} x ${valB} ${games[gameIndex].teamB}!`, "success");
-        saveToLocalStorage();
-        renderGames();
-        renderRanking();
-        renderAdminGames();
-        renderAdminBets();
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/games/${gameId}/score`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-admin-password": "admin123"
+            },
+            body: JSON.stringify({
+                score_a: parseInt(valA),
+                score_b: parseInt(valB)
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || "Erro ao salvar no servidor");
+        }
+
+        const gameIndex = games.findIndex(g => g.id === gameId);
+        if (gameIndex !== -1) {
+            games[gameIndex].scoreA = parseInt(valA);
+            games[gameIndex].scoreB = parseInt(valB);
+            showToast(`Placar oficial salvo: ${games[gameIndex].teamA} ${valA} x ${valB} ${games[gameIndex].teamB}!`, "success");
+            saveToLocalStorage();
+            renderGames();
+            renderRanking();
+            renderAdminGames();
+            renderAdminBets();
+        }
+    } catch (error) {
+        console.error(error);
+        showToast(`Erro ao finalizar jogo: ${error.message}`, "error");
     }
 };
 
-window.reopenGame = function(gameId) {
-    const gameIndex = games.findIndex(g => g.id === gameId);
-    if (gameIndex !== -1) {
-        games[gameIndex].scoreA = null;
-        games[gameIndex].scoreB = null;
-        showToast("Placar removido.", "info");
-        saveToLocalStorage();
-        renderGames();
-        renderRanking();
-        renderAdminGames();
-        renderAdminBets();
+window.reopenGame = async function(gameId) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/games/${gameId}/score`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-admin-password": "admin123"
+            },
+            body: JSON.stringify({
+                score_a: null,
+                score_b: null
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || "Erro ao salvar no servidor");
+        }
+
+        const gameIndex = games.findIndex(g => g.id === gameId);
+        if (gameIndex !== -1) {
+            games[gameIndex].scoreA = null;
+            games[gameIndex].scoreB = null;
+            showToast("Placar removido.", "info");
+            saveToLocalStorage();
+            renderGames();
+            renderRanking();
+            renderAdminGames();
+            renderAdminBets();
+        }
+    } catch (error) {
+        console.error(error);
+        showToast(`Erro ao reabrir jogo: ${error.message}`, "error");
     }
 };
 
-window.deleteGame = function(gameId) {
+window.deleteGame = async function(gameId) {
     if (confirm("Deseja excluir este jogo? Os palpites serão apagados.")) {
-        games = games.filter(g => g.id !== gameId);
-        bets = bets.filter(b => b.gameId !== gameId);
-        showToast("Jogo excluído.", "info");
-        saveToLocalStorage();
-        renderGames();
-        renderRanking();
-        renderAdminGames();
-        renderAdminBets();
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/games/${gameId}`, {
+                method: "DELETE",
+                headers: {
+                    "x-admin-password": "admin123"
+                }
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || "Erro ao excluir no servidor");
+            }
+
+            games = games.filter(g => g.id !== gameId);
+            bets = bets.filter(b => b.gameId !== gameId);
+            showToast("Jogo excluído.", "info");
+            saveToLocalStorage();
+            renderGames();
+            renderRanking();
+            renderAdminGames();
+            renderAdminBets();
+        } catch (error) {
+            console.error(error);
+            showToast(`Erro ao excluir jogo: ${error.message}`, "error");
+        }
     }
 };
 
@@ -1113,6 +1209,9 @@ document.addEventListener("DOMContentLoaded", () => {
     renderGames();
     renderRanking();
     renderPixInfoPanel();
+
+    // Fetch latest matches and ranking stats from Supabase
+    loadDataFromDatabase();
 
     // Fill name, email and whatsapp inputs if user previously logged/purchased
     const nameInput = document.getElementById("checkoutName");
@@ -1260,7 +1359,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 4. Create new game action
     const newGameForm = document.getElementById("newGameForm");
-    newGameForm.addEventListener("submit", (e) => {
+    newGameForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const teamA = document.getElementById("teamAName").value;
         const teamB = document.getElementById("teamBName").value;
@@ -1271,22 +1370,47 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const newGame = {
-            id: "game-" + Date.now(),
-            teamA: teamA,
-            teamB: teamB,
-            dateTime: dateTime,
-            scoreA: null,
-            scoreB: null
-        };
+        const newGameId = "game-" + Date.now();
 
-        games.push(newGame);
-        showToast(`Jogo ${teamA} x ${teamB} cadastrado!`, "success");
-        saveToLocalStorage();
-        newGameForm.reset();
-        
-        renderAdminGames();
-        renderGames();
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/games`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-admin-password": "admin123"
+                },
+                body: JSON.stringify({
+                    id: newGameId,
+                    team_a: teamA,
+                    team_b: teamB,
+                    date_time: dateTime
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || "Erro ao salvar no servidor");
+            }
+
+            games.push({
+                id: newGameId,
+                teamA: teamA,
+                teamB: teamB,
+                dateTime: dateTime,
+                scoreA: null,
+                scoreB: null
+            });
+
+            showToast(`Jogo ${teamA} x ${teamB} cadastrado!`, "success");
+            saveToLocalStorage();
+            newGameForm.reset();
+            
+            renderAdminGames();
+            renderGames();
+        } catch (error) {
+            console.error(error);
+            showToast(`Falha ao cadastrar: ${error.message}`, "error");
+        }
     });
 
     // 5. Save Admin / MP settings

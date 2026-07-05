@@ -296,6 +296,153 @@ app.get("/api/pix/status/:paymentId", async (req, res) => {
   }
 });
 
+// ==========================================
+// ROTAS DE GERENCIAMENTO DE JOGOS E PALPITES (SUPABASE)
+// ==========================================
+
+/**
+ * GET /api/games
+ * Retorna todos os jogos cadastrados no banco de dados.
+ */
+app.get("/api/games", async (req, res) => {
+  if (!supabase) return res.json([]);
+  try {
+    const { data, error } = await supabase
+      .from("bolao_jogos")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error("[ERRO GET GAMES]", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/games
+ * Cadastra um novo jogo. Protegido pela senha do administrador.
+ */
+app.post("/api/games", async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: "Database offline" });
+  const authHeader = req.headers["x-admin-password"];
+  if (authHeader !== "admin123") {
+    return res.status(401).json({ error: "Não autorizado" });
+  }
+  try {
+    const { id, team_a, team_b, date_time, score_a, score_b } = req.body;
+    const { data, error } = await supabase
+      .from("bolao_jogos")
+      .insert({
+        id,
+        team_a,
+        team_b,
+        date_time,
+        score_a: score_a !== undefined ? score_a : null,
+        score_b: score_b !== undefined ? score_b : null
+      })
+      .select();
+    if (error) throw error;
+    res.json({ success: true, game: data[0] });
+  } catch (err) {
+    console.error("[ERRO POST GAME]", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/games/:id
+ * Exclui um jogo. Protegido pela senha do administrador.
+ */
+app.delete("/api/games/:id", async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: "Database offline" });
+  const authHeader = req.headers["x-admin-password"];
+  if (authHeader !== "admin123") {
+    return res.status(401).json({ error: "Não autorizado" });
+  }
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from("bolao_jogos")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[ERRO DELETE GAME]", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/games/:id/score
+ * Atualiza o placar oficial de um jogo. Protegido pela senha do administrador.
+ */
+app.post("/api/games/:id/score", async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: "Database offline" });
+  const authHeader = req.headers["x-admin-password"];
+  if (authHeader !== "admin123") {
+    return res.status(401).json({ error: "Não autorizado" });
+  }
+  try {
+    const { id } = req.params;
+    const { score_a, score_b } = req.body;
+    const { data, error } = await supabase
+      .from("bolao_jogos")
+      .update({
+        score_a: score_a !== null ? parseInt(score_a) : null,
+        score_b: score_b !== null ? parseInt(score_b) : null
+      })
+      .eq("id", id)
+      .select();
+    if (error) throw error;
+    res.json({ success: true, game: data[0] });
+  } catch (err) {
+    console.error("[ERRO POST GAME SCORE]", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/bets
+ * Retorna todos os palpites confirmados (pagamento aprovado).
+ */
+app.get("/api/bets", async (req, res) => {
+  if (!supabase) return res.json([]);
+  try {
+    const { data: participants, error: partErr } = await supabase
+      .from("bolao_participantes")
+      .select("payment_id")
+      .eq("payment_status", "approved");
+
+    if (partErr) throw partErr;
+    if (!participants || participants.length === 0) {
+      return res.json([]);
+    }
+
+    const approvedPaymentIds = participants.map(p => p.payment_id);
+    const { data: palpites, error: palpitesErr } = await supabase
+      .from("bolao_palpites")
+      .select("*")
+      .in("payment_id", approvedPaymentIds);
+
+    if (palpitesErr) throw palpitesErr;
+
+    const formattedBets = palpites.map(b => ({
+      id: b.id,
+      gameId: b.game_id,
+      participantName: b.participant_name,
+      betScoreA: b.bet_score_a,
+      betScoreB: b.bet_score_b
+    }));
+
+    res.json(formattedBets);
+  } catch (err) {
+    console.error("[ERRO GET BETS]", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * POST /api/webhook/mercadopago
  * Recebe notificações de pagamento aprovado do Mercado Pago (IPN/Webhook).
