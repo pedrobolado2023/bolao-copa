@@ -24,8 +24,8 @@ const PORT = process.env.PORT || 3000;
 // ==========================================
 
 // Supabase Connection Settings
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://xftllvnwnkgecjfsppsd.supabase.co";
-const SUPABASE_KEY = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmdGxsdm53bmtnZWNqZnNwcHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODcxMTUsImV4cCI6MjA5MzU2MzExNX0.VHV8OvLQvpZyS_fY16NuoNUtwc9FQH8M3KikvQk2dYU";
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_KEY = process.env.SUPABASE_KEY || "";
 
 let supabase = null;
 if (SUPABASE_URL && SUPABASE_KEY) {
