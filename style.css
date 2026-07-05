@@ -1594,3 +1594,52 @@ tr:nth-child(3) .rank-badge {
         justify-content: space-between;
     }
 }
+
+/* Rules Welcome Modal Custom Styles */
+.rules-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.rules-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px;
+}
+.rules-section h4 {
+    color: var(--accent-yellow);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.rules-section h4 i {
+    width: 18px;
+    height: 18px;
+}
+.rules-section p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+.rules-section ul {
+    margin-left: 18px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.rules-section li {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+.rules-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+}

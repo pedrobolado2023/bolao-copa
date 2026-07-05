@@ -428,6 +428,51 @@
             </div>
         </div>
 
+        <!-- MODAL: REGULAMENTO & AVISO LEGAL (SHOWN ON FIRST VISIT) -->
+        <div class="modal-overlay" id="welcomeRulesModal">
+            <div class="modal-card" style="max-width: 580px;">
+                <div class="modal-header">
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="info" style="color: var(--accent-yellow);"></i> Regulamento do Bolão
+                    </h3>
+                </div>
+                <div class="rules-body">
+                    <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin-bottom: 8px;">
+                        Olá! Seja bem-vindo ao <strong>Bolão da COPA 2026</strong>. Este é um sistema privado voltado para grupos de amigos e familiares. Por favor, leia e aceite o regulamento abaixo para prosseguir:
+                    </p>
+                    
+                    <div class="rules-section">
+                        <h4><i data-lucide="shield-alert"></i> Recreativo & Sem Fins Lucrativos</h4>
+                        <p>
+                            Este site <strong>NÃO é uma plataforma de apostas esportivas, jogos de azar, cassino ou dica de investimentos</strong>. Trata-se de uma ferramenta digital informal para gerenciar bolões recreativos privadamente entre amigos.
+                        </p>
+                    </div>
+
+                    <div class="rules-section">
+                        <h4><i data-lucide="wrench"></i> Taxa de Manutenção do Sistema</h4>
+                        <p>
+                            Para custear as despesas operacionais da plataforma (como hospedagem na nuvem, banco de dados Supabase e taxas de processamento de transações), <strong>o organizador retém uma taxa de 10% do valor total arrecadado no bolão</strong>. Os 90% restantes da arrecadação serão destinados integralmente à premiação final dos vencedores conforme combinado no seu grupo de amigos.
+                        </p>
+                    </div>
+
+                    <div class="rules-section">
+                        <h4><i data-lucide="award"></i> Regras de Pontuação</h4>
+                        <ul>
+                            <li><strong>Placar Exato</strong>: 10 pontos (Ex: Palpite 2x1, Placar 2x1)</li>
+                            <li><strong>Vencedor e Saldo</strong>: 7 pontos (Ex: Palpite 3x1, Placar 2x0)</li>
+                            <li><strong>Vencedor apenas</strong>: 5 pontos (Ex: Palpite 1x0, Placar 2x1)</li>
+                            <li><strong>Gols de um Time</strong>: 2 pontos (Ex: Palpite 2x1, Placar 2x3 - acertou os 2 gols do primeiro time)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="rules-footer">
+                    <button class="btn btn-success btn-block" id="acceptRulesBtn">
+                        <i data-lucide="check"></i> Concordo e Quero Participar
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- NOTIFICATION TOAST -->
         <div class="toast" id="toast">
             <span id="toastMsg">Mensagem de notificação</span>
@@ -435,6 +480,6 @@
     </div>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=1.0.12"></script>
+    <script src="app.js?v=1.0.13"></script>
 </body>
 </html>

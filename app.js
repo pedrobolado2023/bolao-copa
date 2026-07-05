@@ -1249,6 +1249,22 @@ document.addEventListener("DOMContentLoaded", () => {
     renderRanking();
     renderPixInfoPanel();
 
+    // Check if the rules have been accepted
+    const rulesAccepted = localStorage.getItem("bolao_rules_accepted");
+    const welcomeRulesModal = document.getElementById("welcomeRulesModal");
+    if (!rulesAccepted && welcomeRulesModal) {
+        welcomeRulesModal.classList.add("active");
+    }
+
+    const acceptRulesBtn = document.getElementById("acceptRulesBtn");
+    if (acceptRulesBtn && welcomeRulesModal) {
+        acceptRulesBtn.addEventListener("click", () => {
+            localStorage.setItem("bolao_rules_accepted", "true");
+            welcomeRulesModal.classList.remove("active");
+            showToast("Regulamento aceito com sucesso!", "success");
+        });
+    }
+
     // Fetch latest matches and ranking stats from Supabase
     loadDataFromDatabase();
 
