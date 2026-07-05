@@ -1542,13 +1542,6 @@ document.addEventListener("DOMContentLoaded", () => {
             startPaymentPolling(paymentId, nameVal, emailVal, whatsappVal);
             showToast("Código PIX gerado com sucesso!", "success");
             
-            const simulateSuccessBtn = document.getElementById("simulateSuccessBtn");
-            if (isSimulatorMode) {
-                simulateSuccessBtn.style.display = "block";
-            } else {
-                simulateSuccessBtn.style.display = "none";
-            }
-            
         } catch (error) {
             console.error(error);
             showToast(`Erro ao gerar PIX: ${error.message}`, "error");
