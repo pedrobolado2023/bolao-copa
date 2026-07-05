@@ -7,7 +7,7 @@
  *   npm install
  *   node server.js
  *
- * Em produção (divulgai.q-aura.com.br), configure MP_ACCESS_TOKEN como variável de ambiente.
+ * Em produção (bolao.q-aura.com.br), configure MP_ACCESS_TOKEN como variável de ambiente.
  */
 
 const express = require("express");
