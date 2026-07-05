@@ -428,6 +428,33 @@
             </div>
         </div>
 
+        <!-- MODAL: DETALHES DOS PALPITES DO PARTICIPANTE -->
+        <div class="modal-overlay" id="participantDetailModal">
+            <div class="modal-card" style="max-width: 580px;">
+                <div class="modal-header">
+                    <h3 id="participantDetailTitle">Palpites do Participante</h3>
+                    <button class="close-btn" id="closeParticipantDetailBtn">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="bets-detail-body" style="padding: 20px; overflow-y: auto; flex: 1;">
+                    <table class="bets-detail-table">
+                        <thead>
+                            <tr>
+                                <th>Jogo</th>
+                                <th>Palpite</th>
+                                <th>Resultado Real</th>
+                                <th>Pontos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="participantDetailTableBody">
+                            <!-- Dynamic list of games, predictions, actual scores, and points -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- MODAL: REGULAMENTO & AVISO LEGAL (SHOWN ON FIRST VISIT) -->
         <div class="modal-overlay" id="welcomeRulesModal">
             <div class="modal-card" style="max-width: 580px;">
@@ -480,6 +507,6 @@
     </div>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=1.0.15"></script>
+    <script src="app.js?v=1.0.16"></script>
 </body>
 </html>

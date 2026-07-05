@@ -600,8 +600,8 @@ function renderRanking() {
                 <div class="rank-badge">${index + 1}</div>
             </td>
             <td>
-                <div class="participant-name-cell">
-                    ${part.name} ${index === 0 ? '👑' : ''}
+                <div class="participant-name-cell" style="cursor: pointer; color: var(--accent-yellow); font-weight: 600;" onclick="openParticipantDetailModal('${part.name}')">
+                    <span style="border-bottom: 1px dashed var(--accent-yellow);">${part.name}</span> ${index === 0 ? '👑' : ''}
                 </div>
             </td>
             <td class="points-cell">${part.points}</td>
@@ -1246,6 +1246,48 @@ window.openBetsDetailModal = function(gameId) {
     modal.classList.add("active");
 };
 
+window.openParticipantDetailModal = function(participantName) {
+    const nameUpper = participantName.trim().toUpperCase();
+    const modal = document.getElementById("participantDetailModal");
+    const title = document.getElementById("participantDetailTitle");
+    const tbody = document.getElementById("participantDetailTableBody");
+
+    title.textContent = `Palpites de ${nameUpper}`;
+    tbody.innerHTML = "";
+
+    // Filtrar palpites pertencentes a este participante
+    const participantBets = bets.filter(b => b.participantName.trim().toUpperCase() === nameUpper);
+
+    if (participantBets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-muted)">Nenhum palpite confirmado para este participante.</td></tr>`;
+        modal.classList.add("active");
+        return;
+    }
+
+    participantBets.forEach(bet => {
+        const game = games.find(g => g.id === bet.gameId);
+        if (!game) return;
+
+        const isFinished = game.scoreA !== null && game.scoreB !== null;
+        const realScore = isFinished ? `${game.scoreA} x ${game.scoreB}` : "Não iniciado";
+        const points = isFinished ? calculatePoints(bet, game) : "-";
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>
+                <div style="font-size: 0.85rem; font-weight: 500;">${game.teamA} x ${game.teamB}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${formatDateTime(game.dateTime)}</div>
+            </td>
+            <td><strong style="font-family: var(--font-display);">${bet.betScoreA} x ${bet.betScoreB}</strong></td>
+            <td><span style="font-size: 0.85rem; color: var(--text-secondary);">${realScore}</span></td>
+            <td style="font-weight: 600; color: ${points !== "-" && points > 0 ? "var(--accent-green)" : "var(--text-secondary)"};">${points}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    modal.classList.add("active");
+};
+
 // ==========================================
 // PAGE BOOTSTRAP AND MAIN EVENT LISTENERS
 // ==========================================
@@ -1653,12 +1695,21 @@ document.addEventListener("DOMContentLoaded", () => {
         betsDetailModal.classList.remove("active");
     });
 
+    const closeParticipantDetailBtn = document.getElementById("closeParticipantDetailBtn");
+    const participantDetailModal = document.getElementById("participantDetailModal");
+    closeParticipantDetailBtn.addEventListener("click", () => {
+        participantDetailModal.classList.remove("active");
+    });
+
     window.addEventListener("click", (e) => {
         if (e.target === adminModal) {
             adminModal.classList.remove("active");
         }
         if (e.target === betsDetailModal) {
             betsDetailModal.classList.remove("active");
+        }
+        if (e.target === participantDetailModal) {
+            participantDetailModal.classList.remove("active");
         }
         if (e.target === checkoutModal) {
             // Prevent close on click outside if polling is active
