@@ -49,7 +49,9 @@ let participantsPix = JSON.parse(localStorage.getItem("bolao_participants_pix"))
 let pricePerGame = parseFloat(localStorage.getItem("bolao_price_per_game")) || 5.00;
 let mpToken = localStorage.getItem("bolao_mp_token") || DEFAULT_MP_TOKEN;
 let manualPixKey = localStorage.getItem("bolao_manual_pix_key") || "financeiro@empresa.com";
-let isSimulatorMode = localStorage.getItem("bolao_simulator_mode") !== "false"; // Default to true
+let isSimulatorMode = localStorage.getItem("bolao_simulator_mode") !== null
+    ? localStorage.getItem("bolao_simulator_mode") === "true"
+    : (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 let mockPaymentApproved = false;
 
 // Local storage session for the user's name
