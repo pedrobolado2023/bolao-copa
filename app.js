@@ -697,14 +697,11 @@ function renderCheckoutSummary() {
     const summaryList = document.getElementById("checkoutSummaryList");
     const summaryTotalBets = document.getElementById("summaryTotalBets");
     const checkoutTotalText = document.getElementById("checkoutTotalText");
-    const qtyInput = document.getElementById("checkoutQuantity");
-    const qtyVal = parseInt(qtyInput ? qtyInput.value : 1) || 1;
     
     summaryList.innerHTML = "";
     const betKeys = Object.keys(tempBets);
     
-    // Total de apostas = quantidade de palpites no carrinho * multiplicador de cotas
-    summaryTotalBets.textContent = betKeys.length * qtyVal;
+    summaryTotalBets.textContent = betKeys.length;
     
     betKeys.forEach(predId => {
         const pred = tempBets[predId];
@@ -720,7 +717,7 @@ function renderCheckoutSummary() {
         }
     });
     
-    const total = betKeys.length * pricePerGame * qtyVal;
+    const total = betKeys.length * pricePerGame;
     checkoutTotalText.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
 }
 
@@ -803,7 +800,7 @@ async function checkMpPaymentStatus(paymentId) {
 }
 
 // Start polling status loop
-function startPaymentPolling(paymentId, name, email, quantity = 1) {
+function startPaymentPolling(paymentId, name, email) {
     if (pollingIntervalId) {
         clearInterval(pollingIntervalId);
     }
@@ -821,32 +818,38 @@ function startPaymentPolling(paymentId, name, email, quantity = 1) {
                 localStorage.setItem("bolao_user_name", name);
                 localStorage.setItem("bolao_user_email", email);
                 
-                // Commit temporary bets into the database multiple times if quantity > 1
-                for (let i = 1; i <= quantity; i++) {
-                    const participantSuffix = quantity > 1 ? ` #${i}` : "";
+                // Determine max ticket index in tempBets to check if we need suffixes (#1, #2, ...)
+                let maxIndex = 0;
+                Object.values(tempBets).forEach(tBet => {
+                    const idx = parseInt(tBet.predictionId.split("_")[1]) || 0;
+                    if (idx > maxIndex) maxIndex = idx;
+                });
+                
+                // Commit temporary bets into the database
+                Object.values(tempBets).forEach(tBet => {
+                    const idx = parseInt(tBet.predictionId.split("_")[1]) || 0;
+                    const participantSuffix = maxIndex > 0 ? ` #${idx + 1}` : "";
                     const finalParticipantName = (name + participantSuffix).toUpperCase();
                     
-                    Object.values(tempBets).forEach(tBet => {
-                        const existingBetIndex = bets.findIndex(b => b.gameId === tBet.gameId && b.participantName.trim().toUpperCase() === finalParticipantName);
-                        
-                        const newBet = {
-                            id: existingBetIndex !== -1 ? bets[existingBetIndex].id : "b-" + Date.now() + "-" + Math.random().toString(36).substring(2, 5),
-                            gameId: tBet.gameId,
-                            participantName: finalParticipantName,
-                            betScoreA: tBet.betScoreA,
-                            betScoreB: tBet.betScoreB
-                        };
-                        
-                        if (existingBetIndex !== -1) {
-                            bets[existingBetIndex] = newBet;
-                        } else {
-                            bets.push(newBet);
-                        }
-                    });
+                    const existingBetIndex = bets.findIndex(b => b.gameId === tBet.gameId && b.participantName.trim().toUpperCase() === finalParticipantName);
                     
-                    // Set payment confirmation
+                    const newBet = {
+                        id: existingBetIndex !== -1 ? bets[existingBetIndex].id : "b-" + Date.now() + "-" + Math.random().toString(36).substring(2, 5),
+                        gameId: tBet.gameId,
+                        participantName: finalParticipantName,
+                        betScoreA: tBet.betScoreA,
+                        betScoreB: tBet.betScoreB
+                    };
+                    
+                    if (existingBetIndex !== -1) {
+                        bets[existingBetIndex] = newBet;
+                    } else {
+                        bets.push(newBet);
+                    }
+                    
+                    // Set payment confirmation for this participant entry
                     participantsPix[finalParticipantName] = true;
-                }
+                });
                 
                 saveToLocalStorage();
                 
@@ -1322,19 +1325,11 @@ document.addEventListener("DOMContentLoaded", () => {
         updateCartBar();
     });
 
-    const checkoutQtyInput = document.getElementById("checkoutQuantity");
-
     checkoutBtn.addEventListener("click", () => {
-        if (checkoutQtyInput) checkoutQtyInput.value = 1;
         renderCheckoutSummary();
         showCheckoutStep("checkoutFormStep");
         checkoutModal.classList.add("active");
     });
-
-    if (checkoutQtyInput) {
-        checkoutQtyInput.addEventListener("input", renderCheckoutSummary);
-        checkoutQtyInput.addEventListener("change", renderCheckoutSummary);
-    }
 
     closeCheckoutBtn.addEventListener("click", () => {
         checkoutModal.classList.remove("active");
@@ -1347,7 +1342,6 @@ document.addEventListener("DOMContentLoaded", () => {
     generatePixBtn.addEventListener("click", async () => {
         const nameVal = document.getElementById("checkoutName").value.trim();
         const emailVal = document.getElementById("checkoutEmail").value.trim();
-        const qtyVal = parseInt(checkoutQtyInput ? checkoutQtyInput.value : 1) || 1;
 
         if (nameVal === "") {
             showToast("Por favor, preencha o seu nome.", "error");
@@ -1360,14 +1354,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (qtyVal < 1) {
-            showToast("A quantidade mínima de apostas é 1.", "error");
-            return;
-        }
-
         // Calculate value
         const betCount = Object.keys(tempBets).length;
-        const totalValue = betCount * pricePerGame * qtyVal;
+        const totalValue = betCount * pricePerGame;
 
         // Show polling screen with loader overlay active
         showCheckoutStep("checkoutPixStep");
@@ -1389,7 +1378,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("checkoutQrLoading").style.display = "none";
             
             // Start listening status
-            startPaymentPolling(paymentId, nameVal, emailVal, qtyVal);
+            startPaymentPolling(paymentId, nameVal, emailVal);
             showToast("Código PIX gerado com sucesso!", "success");
             
             const simulateSuccessBtn = document.getElementById("simulateSuccessBtn");
