@@ -4,7 +4,7 @@
 # ==========================================
 
 # Usar imagem Node.js leve (Alpine)
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Diretório de trabalho dentro do container
 WORKDIR /app
