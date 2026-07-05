@@ -231,8 +231,8 @@ function calculatePoints(bet, game) {
 function isGameLocked(game) {
     const gameTime = new Date(game.dateTime).getTime();
     const curTime = new Date().getTime();
-    // Encerra apostas 5 minutos antes do início (5 * 60 * 1000 = 300000ms)
-    return curTime >= (gameTime - 5 * 60 * 1000);
+    // Encerra apostas 15 minutos antes do início (15 * 60 * 1000 = 900000ms)
+    return curTime >= (gameTime - 15 * 60 * 1000);
 }
 
 function checkGameLockStatus() {
@@ -467,8 +467,8 @@ function updateCountdownTimers() {
         
         function update() {
             const now = new Date().getTime();
-            // A contagem regressiva encerra 5 minutos antes do início
-            const diff = (targetDate - 5 * 60 * 1000) - now;
+            // A contagem regressiva encerra 15 minutos antes do início
+            const diff = (targetDate - 15 * 60 * 1000) - now;
             
             if (diff <= 0) {
                 timer.innerHTML = '<i data-lucide="lock"></i> Fechado';
@@ -812,10 +812,10 @@ function startPaymentPolling(paymentId, name, email, whatsapp) {
     }
     
     const startTime = Date.now();
-    const expirationDuration = 5 * 60 * 1000; // 5 minutos de expiração
+    const expirationDuration = 15 * 60 * 1000; // 15 minutos de expiração
     const timerElement = document.getElementById("pixExpirationTimer");
     if (timerElement) {
-        timerElement.textContent = "O código expira em: 05:00";
+        timerElement.textContent = "O código expira em: 15:00";
         timerElement.style.color = "var(--accent-yellow)";
     }
     
@@ -830,7 +830,7 @@ function startPaymentPolling(paymentId, name, email, whatsapp) {
                 timerElement.textContent = "Código PIX expirado!";
                 timerElement.style.color = "var(--accent-red)";
             }
-            showToast("O tempo limite de 5 minutos para pagamento do PIX expirou. Por favor, envie os palpites novamente.", "error");
+            showToast("O tempo limite de 15 minutos para pagamento do PIX expirou. Por favor, envie os palpites novamente.", "error");
             setTimeout(() => {
                 const checkoutModal = document.getElementById("checkoutModal");
                 if (checkoutModal) {
