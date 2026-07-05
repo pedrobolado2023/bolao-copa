@@ -28,11 +28,13 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_KEY || "";
 
 let supabase = null;
+let supabaseInitError = null;
 if (SUPABASE_URL && SUPABASE_KEY) {
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     console.log("[INFO] Supabase client initialized successfully!");
   } catch (err) {
+    supabaseInitError = err.message;
     console.error("[ERRO] Falha ao inicializar o cliente do Supabase:", err.message);
   }
 } else {
@@ -382,8 +384,11 @@ app.get("/health", async (req, res) => {
     supabase: {
       status: supabaseStatus,
       error: supabaseError,
+      init_error: supabaseInitError,
       url_configured: !!process.env.SUPABASE_URL,
-      key_configured: !!process.env.SUPABASE_KEY
+      key_configured: !!process.env.SUPABASE_KEY,
+      url_val: process.env.SUPABASE_URL ? `${process.env.SUPABASE_URL.substring(0, 15)}... (len: ${process.env.SUPABASE_URL.length})` : "empty",
+      key_val: process.env.SUPABASE_KEY ? `${process.env.SUPABASE_KEY.substring(0, 10)}... (len: ${process.env.SUPABASE_KEY.length})` : "empty"
     }
   });
 });
