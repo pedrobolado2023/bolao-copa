@@ -352,15 +352,39 @@ async function updateSupabasePaymentStatus(paymentId, status) {
   }
 }
 
-/**
- * GET /health
- * Endpoint de health check para monitoramento.
- */
-app.get("/health", (req, res) => {
+app.get("/health", async (req, res) => {
+  let supabaseStatus = "disabled";
+  let supabaseError = null;
+  
+  if (supabase) {
+    supabaseStatus = "initialized";
+    try {
+      // Perform a minimal select query to check connection
+      const { data, error } = await supabase.from("bolao_participantes").select("id").limit(1);
+      if (error) {
+        supabaseStatus = "error";
+        supabaseError = error.message;
+      } else {
+        supabaseStatus = "connected";
+      }
+    } catch (err) {
+      supabaseStatus = "error";
+      supabaseError = err.message;
+    }
+  } else {
+    supabaseStatus = "not_configured (SUPABASE_URL or SUPABASE_KEY missing in process.env)";
+  }
+
   res.json({
     status: "ok",
     timestamp: new Date().toISOString(),
     service: "Arena Bolão Backend",
+    supabase: {
+      status: supabaseStatus,
+      error: supabaseError,
+      url_configured: !!process.env.SUPABASE_URL,
+      key_configured: !!process.env.SUPABASE_KEY
+    }
   });
 });
 
