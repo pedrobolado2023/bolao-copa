@@ -231,7 +231,8 @@ function calculatePoints(bet, game) {
 function isGameLocked(game) {
     const gameTime = new Date(game.dateTime).getTime();
     const curTime = new Date().getTime();
-    return curTime >= gameTime;
+    // Encerra apostas 5 minutos antes do início (5 * 60 * 1000 = 300000ms)
+    return curTime >= (gameTime - 5 * 60 * 1000);
 }
 
 function checkGameLockStatus() {
@@ -466,7 +467,8 @@ function updateCountdownTimers() {
         
         function update() {
             const now = new Date().getTime();
-            const diff = targetDate - now;
+            // A contagem regressiva encerra 5 minutos antes do início
+            const diff = (targetDate - 5 * 60 * 1000) - now;
             
             if (diff <= 0) {
                 timer.innerHTML = '<i data-lucide="lock"></i> Fechado';
@@ -809,7 +811,42 @@ function startPaymentPolling(paymentId, name, email, whatsapp) {
         clearInterval(pollingIntervalId);
     }
     
+    const startTime = Date.now();
+    const expirationDuration = 5 * 60 * 1000; // 5 minutos de expiração
+    const timerElement = document.getElementById("pixExpirationTimer");
+    if (timerElement) {
+        timerElement.textContent = "O código expira em: 05:00";
+        timerElement.style.color = "var(--accent-yellow)";
+    }
+    
     pollingIntervalId = setInterval(async () => {
+        const elapsed = Date.now() - startTime;
+        const remaining = expirationDuration - elapsed;
+
+        if (remaining <= 0) {
+            clearInterval(pollingIntervalId);
+            pollingIntervalId = null;
+            if (timerElement) {
+                timerElement.textContent = "Código PIX expirado!";
+                timerElement.style.color = "var(--accent-red)";
+            }
+            showToast("O tempo limite de 5 minutos para pagamento do PIX expirou. Por favor, envie os palpites novamente.", "error");
+            setTimeout(() => {
+                const checkoutModal = document.getElementById("checkoutModal");
+                if (checkoutModal) {
+                    checkoutModal.classList.remove("active");
+                }
+            }, 4000);
+            return;
+        }
+
+        const remainingSeconds = Math.max(0, Math.floor(remaining / 1000));
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        if (timerElement) {
+            timerElement.textContent = `O código expira em: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
         try {
             const status = await checkMpPaymentStatus(paymentId);
             if (status === "approved") {
