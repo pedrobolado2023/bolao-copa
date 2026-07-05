@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arena Bolão - Copa do Mundo</title>
+    <title>Bolão da COPA 2026</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
                     <i data-lucide="trophy"></i>
                 </div>
                 <div>
-                    <h1>Arena Bolão</h1>
+                    <h1>Bolão da COPA 2026</h1>
                     <p>Copa do Mundo 2026</p>
                 </div>
             </div>
@@ -31,7 +31,7 @@
                     <span class="badge-label"><i data-lucide="crown"></i> Líder Atual</span>
                     <span class="badge-value" id="currentLeaderName">Nenhum palpite</span>
                 </div>
-                <button class="btn btn-secondary btn-admin-toggle" id="openAdminBtn">
+                <button class="btn btn-secondary btn-admin-toggle" id="openAdminBtn" style="display: none;">
                     <i data-lucide="lock"></i> Painel Admin
                 </button>
             </div>
@@ -258,10 +258,6 @@
                         <i data-lucide="refresh-cw" class="animate-spin"></i>
                         <span>O bolão será ativado automaticamente assim que você pagar.</span>
                     </div>
-                    
-                    <button class="btn btn-secondary btn-block btn-sm" id="simulateSuccessBtn" style="display: none; margin-top: 12px; border: 1px dashed var(--accent-green); color: var(--accent-green);">
-                        <i data-lucide="check"></i> Simular Confirmação de Pagamento (Testes)
-                    </button>
                 </div>
 
                 <!-- STEP 3: SUCCESS CONFIRMATION -->
@@ -367,10 +363,6 @@
                                 <p class="help-text">Configurado com o seu token padrão do Mercado Pago. Para testar com outra conta, altere aqui.</p>
                             </div>
                             
-                            <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin: 12px 0;">
-                                <input type="checkbox" id="adminSimulatorInput" style="width: auto; height: auto; margin: 0;">
-                                <label for="adminSimulatorInput" style="cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">Ativar Modo Simulador (Evita erros de CORS no navegador local)</label>
-                            </div>
                             
                             <button class="btn btn-success btn-block" id="savePixSettingsBtn">
                                 <i data-lucide="save"></i> Salvar Configurações
@@ -443,6 +435,6 @@
     </div>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=1.0.4"></script>
+    <script src="app.js?v=1.0.5"></script>
 </body>
 </html>

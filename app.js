@@ -49,10 +49,8 @@ let participantsPix = JSON.parse(localStorage.getItem("bolao_participants_pix"))
 let pricePerGame = parseFloat(localStorage.getItem("bolao_price_per_game")) || 5.00;
 let mpToken = localStorage.getItem("bolao_mp_token") || DEFAULT_MP_TOKEN;
 let manualPixKey = localStorage.getItem("bolao_manual_pix_key") || "financeiro@empresa.com";
-let isSimulatorMode = localStorage.getItem("bolao_simulator_mode") !== null
-    ? localStorage.getItem("bolao_simulator_mode") === "true"
-    : false;
-let mockPaymentApproved = false;
+const isSimulatorMode = false;
+const mockPaymentApproved = false;
 
 // Local storage session for the user's name
 let loggedUserName = localStorage.getItem("bolao_user_name") || "";
@@ -136,7 +134,6 @@ function saveToLocalStorage() {
     localStorage.setItem("bolao_price_per_game", pricePerGame.toString());
     localStorage.setItem("bolao_mp_token", mpToken);
     localStorage.setItem("bolao_manual_pix_key", manualPixKey);
-    localStorage.setItem("bolao_simulator_mode", isSimulatorMode ? "true" : "false");
 }
 
 // ==========================================
@@ -1161,6 +1158,32 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("adminKeyInput").value = manualPixKey;
     document.getElementById("adminMpTokenInput").value = mpToken;
 
+    // Secret backdoor to show Admin button
+    const headerTitle = document.querySelector(".header-logo");
+    let clickCount = 0;
+    if (headerTitle) {
+        headerTitle.addEventListener("click", () => {
+            clickCount++;
+            if (clickCount >= 5) {
+                const openAdminBtn = document.getElementById("openAdminBtn");
+                if (openAdminBtn) {
+                    openAdminBtn.style.display = "inline-flex";
+                    showToast("Painel Admin revelado!", "success");
+                }
+                clickCount = 0;
+            }
+        });
+    }
+
+    // Also support revealing via query parameter ?admin=true
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("admin") === "true") {
+        const openAdminBtn = document.getElementById("openAdminBtn");
+        if (openAdminBtn) {
+            openAdminBtn.style.display = "inline-flex";
+        }
+    }
+
     // 1. Navigation Tab Switches
     const tabButtons = document.querySelectorAll(".nav-tab");
     tabButtons.forEach(btn => {
@@ -1299,15 +1322,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 5. Save Admin / MP settings
     const savePixSettingsBtn = document.getElementById("savePixSettingsBtn");
-    const adminSimulatorInput = document.getElementById("adminSimulatorInput");
-    
-    adminSimulatorInput.checked = isSimulatorMode;
 
     savePixSettingsBtn.addEventListener("click", () => {
         const newPrice = parseFloat(document.getElementById("adminPriceInput").value);
         const newKey = document.getElementById("adminKeyInput").value.trim();
         const newToken = document.getElementById("adminMpTokenInput").value.trim();
-        const isSimChecked = adminSimulatorInput.checked;
 
         if (isNaN(newPrice) || newPrice < 0) {
             showToast("Preço inválido.", "error");
@@ -1321,7 +1340,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         pricePerGame = newPrice;
         manualPixKey = newKey;
-        isSimulatorMode = isSimChecked;
         if (newToken !== "") {
             mpToken = newToken;
         }
@@ -1433,12 +1451,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector('.nav-tab[data-tab="ranking"]').click();
     });
 
-    // Simulate Payment Success Action (Test simulator helper)
-    const simulateSuccessBtn = document.getElementById("simulateSuccessBtn");
-    simulateSuccessBtn.addEventListener("click", () => {
-        mockPaymentApproved = true;
-        showToast("Simulando aprovação de pagamento...", "info");
-    });
+
 
     // 7. Reset all database data
     const resetAllDataBtn = document.getElementById("resetAllDataBtn");
@@ -1474,8 +1487,6 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("adminPriceInput").value = pricePerGame;
             document.getElementById("adminKeyInput").value = manualPixKey;
             document.getElementById("adminMpTokenInput").value = mpToken;
-            adminSimulatorInput.checked = isSimulatorMode;
-            
             renderAdminGames();
             renderAdminBets();
             showToast("Banco de dados resetado!", "info");
