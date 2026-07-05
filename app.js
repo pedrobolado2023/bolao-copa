@@ -59,7 +59,7 @@ let loggedUserName = localStorage.getItem("bolao_user_name") || "";
 let loggedUserEmail = localStorage.getItem("bolao_user_email") || "";
 
 // Temporary Cart/Checkout state
-let tempBets = {}; // Keyed by gameId: { gameId, betScoreA, betScoreB }
+let tempBets = {}; // Keyed by predictionId: { predictionId, gameId, betScoreA, betScoreB }
 let pollingIntervalId = null;
 
 // Active Filter and Tab
@@ -326,22 +326,18 @@ function renderGames() {
 
         // Check if current user has already submitted a paid prediction for this game
         let userHasPaidBet = false;
-        let paidBetA = "";
-        let paidBetB = "";
+        let paidPredictions = [];
 
         if (loggedUserName) {
             const nameUpper = loggedUserName.trim().toUpperCase();
-            const existingPaidBet = bets.find(b => {
+            paidPredictions = bets.filter(b => {
                 const pName = b.participantName.trim().toUpperCase();
-                return b.gameId === game.id && (pName === nameUpper || pName.startsWith(nameUpper + " #"));
+                return b.gameId === game.id && 
+                       (pName === nameUpper || pName.startsWith(nameUpper + " #")) && 
+                       participantsPix[pName] === true;
             });
-            if (existingPaidBet) {
-                const pNameUpper = existingPaidBet.participantName.trim().toUpperCase();
-                if (participantsPix[pNameUpper] === true) {
-                    userHasPaidBet = true;
-                    paidBetA = existingPaidBet.betScoreA;
-                    paidBetB = existingPaidBet.betScoreB;
-                }
+            if (paidPredictions.length > 0) {
+                userHasPaidBet = true;
             }
         }
 
@@ -376,34 +372,59 @@ function renderGames() {
                 </button>
             `;
         } else if (userHasPaidBet) {
-            // Already paid bet for this open game
-            scoresContentHTML = `
-                <div class="bet-inputs-row">
-                    <span class="score-display" style="color: var(--accent-green);">${paidBetA}</span>
-                    <span class="score-dash">-</span>
-                    <span class="score-display" style="color: var(--accent-green);">${paidBetB}</span>
+            // Render all paid predictions for this game
+            scoresContentHTML = paidPredictions.map(p => `
+                <div class="bet-inputs-row" style="margin-bottom: 6px;">
+                    <span class="score-display" style="color: var(--accent-green); font-size: 1.25rem;">${p.betScoreA}</span>
+                    <span class="score-dash" style="font-size: 1rem;">-</span>
+                    <span class="score-display" style="color: var(--accent-green); font-size: 1.25rem;">${p.betScoreB}</span>
                 </div>
-            `;
+            `).join("");
             actionHTML = `
-                <div class="submitted-badge">
-                    <i data-lucide="check-circle"></i> Palpite Confirmado & Pago
+                <div class="submitted-badge" style="color: var(--accent-green); font-weight: 500; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> ${paidPredictions.length} ${paidPredictions.length > 1 ? 'Palpites Confirmados' : 'Palpite Confirmado'} & Pago
                 </div>
             `;
         } else {
-            // Open for input. Restore temp cart state if exists
-            const tempValA = tempBets[game.id] ? tempBets[game.id].betScoreA : "";
-            const tempValB = tempBets[game.id] ? tempBets[game.id].betScoreB : "";
+            // Open for input. Retrieve all temporary predictions for this game
+            const gamePreds = Object.values(tempBets).filter(b => b.gameId === game.id);
+            if (gamePreds.length === 0) {
+                // Default to 1 empty prediction row if none exist
+                gamePreds.push({ predictionId: `${game.id}_0`, gameId: game.id, betScoreA: "", betScoreB: "" });
+            }
 
             scoresContentHTML = `
-                <div class="bet-inputs-row">
-                    <input type="number" min="0" max="99" class="score-input input-score-a" id="bet-a-${game.id}" placeholder="0" value="${tempValA}" oninput="onScoreInputChanged('${game.id}')">
-                    <span class="score-dash">x</span>
-                    <input type="number" min="0" max="99" class="score-input input-score-b" id="bet-b-${game.id}" placeholder="0" value="${tempValB}" oninput="onScoreInputChanged('${game.id}')">
+                <div class="predictions-rows-container" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                    ${gamePreds.map((pred, idx) => {
+                        const tempValA = pred.betScoreA !== undefined && pred.betScoreA !== "" ? pred.betScoreA : "";
+                        const tempValB = pred.betScoreB !== undefined && pred.betScoreB !== "" ? pred.betScoreB : "";
+                        const showDelete = idx > 0;
+                        return `
+                            <div class="bet-inputs-row" id="row-${pred.predictionId}" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <input type="number" min="0" max="99" class="score-input input-score-a" id="bet-a-${pred.predictionId}" placeholder="0" value="${tempValA}" oninput="onScoreInputChanged('${pred.predictionId}', '${game.id}')" style="width: 55px; text-align: center;">
+                                <span class="score-dash">x</span>
+                                <input type="number" min="0" max="99" class="score-input input-score-b" id="bet-b-${pred.predictionId}" placeholder="0" value="${tempValB}" oninput="onScoreInputChanged('${pred.predictionId}', '${game.id}')" style="width: 55px; text-align: center;">
+                                ${showDelete ? `
+                                    <button type="button" class="btn-remove-pred" onclick="removePredictionRow('${pred.predictionId}')" style="background: none; border: none; color: #ff5252; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 2px;">
+                                        <i data-lucide="minus-circle" style="width: 18px; height: 18px;"></i>
+                                    </button>
+                                ` : `
+                                    <div style="width: 22px;"></div>
+                                `}
+                            </div>
+                        `;
+                    }).join("")}
                 </div>
             `;
+
             actionHTML = `
-                <div class="participant-input-area" style="text-align: center; color: var(--text-muted); font-size: 0.75rem;">
-                    Palpite salvo temporariamente no rodapé.
+                <div class="predictions-actions" style="margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addNewPredictionRow('${game.id}')" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.15); color: var(--text-secondary); width: auto; cursor: pointer;">
+                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Outro palpite para este jogo
+                    </button>
+                    <div class="participant-input-area" style="text-align: center; color: var(--text-muted); font-size: 0.7rem;">
+                        Palpites salvos temporariamente no rodapé.
+                    </div>
                 </div>
             `;
         }
@@ -590,9 +611,9 @@ function renderPixInfoPanel() {
 // ==========================================
 // BETTING CART / CARRINHO ENGINE
 // ==========================================
-window.onScoreInputChanged = function(gameId) {
-    const inputA = document.getElementById(`bet-a-${gameId}`);
-    const inputB = document.getElementById(`bet-b-${gameId}`);
+window.onScoreInputChanged = function(predictionId, gameId) {
+    const inputA = document.getElementById(`bet-a-${predictionId}`);
+    const inputB = document.getElementById(`bet-b-${predictionId}`);
     
     if (!inputA || !inputB) return;
     
@@ -601,16 +622,46 @@ window.onScoreInputChanged = function(gameId) {
     
     if (valA !== "" && valB !== "") {
         // Both filled -> store in temporary cart state
-        tempBets[gameId] = {
+        tempBets[predictionId] = {
+            predictionId: predictionId,
             gameId: gameId,
             betScoreA: parseInt(valA),
             betScoreB: parseInt(valB)
         };
     } else {
         // Cut out if one of them is empty
-        delete tempBets[gameId];
+        delete tempBets[predictionId];
     }
     
+    updateCartBar();
+};
+
+window.addNewPredictionRow = function(gameId) {
+    // Find next index for this game
+    const gameKeys = Object.keys(tempBets).filter(k => k.startsWith(`${gameId}_`));
+    let nextIndex = 0;
+    if (gameKeys.length > 0) {
+        const indices = gameKeys.map(k => parseInt(k.split("_")[1]) || 0);
+        nextIndex = Math.max(...indices) + 1;
+    } else {
+        nextIndex = 1;
+    }
+    
+    const newPredId = `${gameId}_${nextIndex}`;
+    tempBets[newPredId] = {
+        predictionId: newPredId,
+        gameId: gameId,
+        betScoreA: "",
+        betScoreB: ""
+    };
+    
+    renderGames();
+    updateCartBar();
+};
+
+window.removePredictionRow = function(predictionId) {
+    delete tempBets[predictionId];
+    renderGames();
     updateCartBar();
 };
 
@@ -655,15 +706,15 @@ function renderCheckoutSummary() {
     // Total de apostas = quantidade de palpites no carrinho * multiplicador de cotas
     summaryTotalBets.textContent = betKeys.length * qtyVal;
     
-    betKeys.forEach(gameId => {
-        const game = games.find(g => g.id === gameId);
+    betKeys.forEach(predId => {
+        const pred = tempBets[predId];
+        const game = games.find(g => g.id === pred.gameId);
         if (game) {
-            const bet = tempBets[gameId];
             const item = document.createElement("div");
             item.className = "summary-item";
             item.innerHTML = `
                 <span>${game.teamA} x ${game.teamB}</span>
-                <span class="summary-score">${bet.betScoreA} x ${bet.betScoreB}</span>
+                <span class="summary-score">${pred.betScoreA} x ${pred.betScoreB}</span>
             `;
             summaryList.appendChild(item);
         }
