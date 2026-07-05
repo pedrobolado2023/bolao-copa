@@ -608,8 +608,10 @@ function renderRanking() {
 }
 
 function renderPixInfoPanel() {
-    document.getElementById("infoPricePerGame").textContent = `R$ ${pricePerGame.toFixed(2).replace('.', ',')}`;
-    document.getElementById("infoPixKey").textContent = manualPixKey;
+    const infoPrice = document.getElementById("infoPricePerGame");
+    if (infoPrice) {
+        infoPrice.textContent = `R$ ${pricePerGame.toFixed(2).replace('.', ',')}`;
+    }
 }
 
 // ==========================================
