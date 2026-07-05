@@ -1,0 +1,18 @@
+{
+  "name": "arena-bolao-backend",
+  "version": "1.0.0",
+  "description": "Backend para o Arena Bolão - Gerencia pagamentos PIX via Mercado Pago",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["bolao", "pix", "mercadopago", "copa"],
+  "author": "Arena Bolão",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "uuid": "^9.0.0"
+  }
+}

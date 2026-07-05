@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena Bolão - Copa do Mundo</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="main-header">
+            <div class="header-logo">
+                <div class="logo-icon">
+                    <i data-lucide="trophy"></i>
+                </div>
+                <div>
+                    <h1>Arena Bolão</h1>
+                    <p>Copa do Mundo 2026</p>
+                </div>
+            </div>
+            
+            <div class="header-stats">
+                <div class="leader-badge" id="headerLeader">
+                    <span class="badge-label"><i data-lucide="crown"></i> Líder Atual</span>
+                    <span class="badge-value" id="currentLeaderName">Nenhum palpite</span>
+                </div>
+                <button class="btn btn-secondary btn-admin-toggle" id="openAdminBtn">
+                    <i data-lucide="lock"></i> Painel Admin
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN TABS NAVIGATION -->
+        <nav class="main-nav">
+            <button class="nav-tab active" data-tab="jogos">
+                <i data-lucide="calendar"></i> Jogos e Palpites
+            </button>
+            <button class="nav-tab" data-tab="ranking">
+                <i data-lucide="list-ordered"></i> Classificação
+            </button>
+            <button class="nav-tab" data-tab="pagamento">
+                <i data-lucide="qr-code"></i> Participar (PIX)
+            </button>
+        </nav>
+
+        <!-- CONTENT PANELS -->
+        <main class="content-panel">
+            
+            <!-- PANEL: JOGOS E PALPITES -->
+            <section id="panel-jogos" class="tab-panel active">
+                <div class="panel-header">
+                    <div class="panel-title-area">
+                        <h2>Jogos Disponíveis</h2>
+                        <p>Preencha os placares desejados. Ao finalizar todos os palpites, clique em enviar no rodapé!</p>
+                    </div>
+                    <div class="filter-bar">
+                        <button class="filter-btn active" data-filter="todos">Todos</button>
+                        <button class="filter-btn" data-filter="abertos">Abertos</button>
+                        <button class="filter-btn" data-filter="fechados">Fechados</button>
+                        <button class="filter-btn" data-filter="finalizados">Finalizados</button>
+                    </div>
+                </div>
+                
+                <div class="games-grid" id="gamesGrid">
+                    <!-- Dynamic games list will be rendered here -->
+                    <div class="no-data-placeholder">
+                        <i data-lucide="info"></i>
+                        <p>Nenhum jogo cadastrado. Se você for o administrador, clique em "Painel Admin" para adicionar jogos.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANEL: RANKING -->
+            <section id="panel-ranking" class="tab-panel">
+                <div class="panel-header">
+                    <div class="panel-title-area">
+                        <h2>Classificação Geral</h2>
+                        <p>Acompanhe quem está liderando o bolão da empresa!</p>
+                    </div>
+                    <div class="rules-summary">
+                        <span class="info-tooltip-trigger">
+                            <i data-lucide="help-circle"></i> Regras de Pontuação
+                        </span>
+                        <div class="rules-dropdown">
+                            <h4>Tabela de Pontos:</h4>
+                            <ul>
+                                <li><strong>10 pts:</strong> Placar Exato</li>
+                                <li><strong>7 pts:</strong> Acertar Vencedor/Empate + Saldo de Gols</li>
+                                <li><strong>5 pts:</strong> Acertar Vencedor ou Empate (apenas)</li>
+                                <li><strong>2 pts:</strong> Acertar número de gols de apenas um time</li>
+                                <li><strong>0 pts:</strong> Erro total</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="ranking-table" id="rankingTable">
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Participante</th>
+                                <th>Pontos</th>
+                                <th>Placar Exato (10pt)</th>
+                                <th>Saldo Gols (7pt)</th>
+                                <th>Vencedor (5pt)</th>
+                                <th>Status PIX</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankingBody">
+                            <!-- Dynamic ranking list will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PANEL: PIX & PAGAMENTO -->
+            <section id="panel-pagamento" class="tab-panel">
+                <div class="panel-header">
+                    <div class="panel-title-area">
+                        <h2>Participar do Bolão</h2>
+                        <p>Consulte as informações do bolão ou use a área de palpites para gerar o pagamento.</p>
+                    </div>
+                </div>
+                
+                <div class="payment-container">
+                    <div class="payment-card">
+                        <div class="pix-badge">
+                            <i data-lucide="info"></i>
+                            <span>Como Funciona o Pagamento</span>
+                        </div>
+                        
+                        <div class="pix-instructions">
+                            <ol>
+                                <li>Na aba <strong>Jogos e Palpites</strong>, preencha os resultados dos jogos que deseja chutar.</li>
+                                <li>O sistema calculará automaticamente o valor total (ex: R$ 5,00 por jogo).</li>
+                                <li>Clique em <strong>"Pagar e Enviar Palpites"</strong> na barra inferior para realizar o PIX via Mercado Pago.</li>
+                                <li>Assim que o pagamento for aprovado, seus palpites serão liberados automaticamente no ranking.</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="payment-details-box">
+                            <div class="value-item">
+                                <span>Preço por palpite:</span>
+                                <strong id="infoPricePerGame">R$ 5,00</strong>
+                            </div>
+                            <div class="value-item">
+                                <span>Chave PIX Manual:</span>
+                                <span class="manual-key-text" id="infoPixKey">financeiro@empresa.com</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- STICKY FLOATING CART BAR -->
+        <div class="cart-floating-bar" id="cartBar">
+            <div class="cart-info">
+                <div class="cart-icon-wrapper">
+                    <i data-lucide="shopping-bag"></i>
+                    <span class="cart-badge" id="cartBadgeCount">0</span>
+                </div>
+                <div>
+                    <h4 id="cartTitleText">Nenhum palpite selecionado</h4>
+                    <p id="cartSubtitleText">Preencha o placar dos jogos acima</p>
+                </div>
+            </div>
+            <div class="cart-actions">
+                <span class="cart-total-price" id="cartTotalPrice">R$ 0,00</span>
+                <button class="btn btn-success" id="checkoutBtn" disabled>
+                    <i data-lucide="credit-card"></i> Enviar e Pagar
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL: CHECKOUT MERCADO PAGO PIX -->
+        <div class="modal-overlay" id="checkoutModal">
+            <div class="modal-card" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h3>Confirmar Palpites e Pagar</h3>
+                    <button class="close-btn" id="closeCheckoutBtn">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                
+                <!-- STEP 1: SUMMARY & DETAILS FORM -->
+                <div class="checkout-body active" id="checkoutFormStep">
+                    <div class="checkout-summary">
+                        <h4>Resumo dos Palpites</h4>
+                        <div class="summary-list" id="checkoutSummaryList">
+                            <!-- Populated dynamically with bets summary -->
+                        </div>
+                        <div class="summary-total">
+                            <span>Total (<span id="summaryTotalBets">0</span> palpites):</span>
+                            <strong id="checkoutTotalText">R$ 0,00</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="checkoutName">Seu Nome Completo:</label>
+                        <input type="text" id="checkoutName" placeholder="Ex: João Silva" required>
+                        <p class="help-text">Use este nome para se identificar no ranking.</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="checkoutEmail">Seu E-mail:</label>
+                        <input type="email" id="checkoutEmail" placeholder="Ex: joao@empresa.com" required>
+                        <p class="help-text">Necessário para gerar o recibo oficial do Mercado Pago.</p>
+                    </div>
+                    
+                    <button class="btn btn-success btn-block" id="generatePixBtn">
+                        <i data-lucide="qr-code"></i> Gerar PIX
+                    </button>
+                </div>
+
+                <!-- STEP 2: PIX QR CODE & POLLING -->
+                <div class="checkout-body" id="checkoutPixStep">
+                    <div class="pix-waiting-badge">
+                        <div class="spinner-small"></div>
+                        <span>Aguardando Pagamento PIX...</span>
+                    </div>
+
+                    <div class="pix-visual-area">
+                        <div class="qr-code-wrapper">
+                            <img id="checkoutQrImg" src="" alt="QR Code PIX do Mercado Pago" class="qr-code-img">
+                            <div class="qr-loading-overlay" id="checkoutQrLoading">
+                                <div class="spinner"></div>
+                                <p>Gerando código PIX...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="pix-key-wrapper">
+                            <label for="checkoutPixCopiar">Código Pix Copia e Cola:</label>
+                            <div class="copy-input-group">
+                                <input type="text" id="checkoutPixCopiar" readonly value="Gerando código...">
+                                <button class="btn btn-primary" id="copyCheckoutPixBtn">
+                                    <i data-lucide="copy"></i> Copiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="polling-status">
+                        <i data-lucide="refresh-cw" class="animate-spin"></i>
+                        <span>O bolão será ativado automaticamente assim que você pagar.</span>
+                    </div>
+                    
+                    <button class="btn btn-secondary btn-block btn-sm" id="simulateSuccessBtn" style="display: none; margin-top: 12px; border: 1px dashed var(--accent-green); color: var(--accent-green);">
+                        <i data-lucide="check"></i> Simular Confirmação de Pagamento (Testes)
+                    </button>
+                </div>
+
+                <!-- STEP 3: SUCCESS CONFIRMATION -->
+                <div class="checkout-body success-body" id="checkoutSuccessStep">
+                    <div class="success-icon-wrapper">
+                        <i data-lucide="check-circle"></i>
+                    </div>
+                    <h3>Palpites Confirmados! 🎉</h3>
+                    <p>Seu pagamento foi aprovado com sucesso via Mercado Pago. Seus palpites agora estão ativos no ranking oficial da empresa.</p>
+                    <button class="btn btn-success btn-block" id="closeSuccessBtn">
+                        Visualizar Classificação
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN MODAL SECTION (HIDDEN BY DEFAULT) -->
+        <div class="modal-overlay" id="adminModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>Painel Administrativo</h3>
+                    <button class="close-btn" id="closeAdminBtn">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                
+                <!-- Admin Authentication -->
+                <div id="adminAuthArea" class="admin-sub-area">
+                    <p class="auth-message">Digite a senha de administrador para acessar as configurações.</p>
+                    <div class="form-group">
+                        <label for="adminPasswordInput">Senha de Acesso:</label>
+                        <input type="password" id="adminPasswordInput" placeholder="Senha (padrão: admin123)">
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary btn-block" id="loginAdminBtn">Entrar</button>
+                    </div>
+                    <p class="error-text" id="authErrorMsg" style="display:none;">Senha incorreta. Tente novamente.</p>
+                </div>
+
+                <!-- Admin Controls Panel -->
+                <div id="adminPanelArea" class="admin-sub-area" style="display:none;">
+                    <nav class="admin-tabs">
+                        <button class="admin-tab-btn active" data-admin-tab="add-game">Cadastrar Jogo</button>
+                        <button class="admin-tab-btn" data-admin-tab="pix-settings">Configurar Mercado Pago</button>
+                        <button class="admin-tab-btn" data-admin-tab="manage-bets">Gerenciar Participantes</button>
+                    </nav>
+
+                    <div class="admin-tab-content">
+                        <!-- ADMIN SUB-TAB: CADASTRAR JOGO -->
+                        <div class="admin-sub-panel active" id="admin-add-game">
+                            <form id="newGameForm">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="teamAName">Time A:</label>
+                                        <select id="teamAName" required>
+                                            <option value="">Selecione...</option>
+                                            <!-- Will be populated dynamically -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="teamBName">Time B:</label>
+                                        <select id="teamBName" required>
+                                            <option value="">Selecione...</option>
+                                            <!-- Will be populated dynamically -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="gameDateTime">Data e Hora de Início:</label>
+                                        <input type="datetime-local" id="gameDateTime" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-block">
+                                    <i data-lucide="plus-circle"></i> Cadastrar Jogo
+                                </button>
+                            </form>
+
+                            <hr class="admin-separator">
+
+                            <h4>Jogos Cadastrados</h4>
+                            <div class="admin-games-list" id="adminGamesList">
+                                <!-- Dynamic games manage rows -->
+                            </div>
+                        </div>
+
+                        <!-- ADMIN SUB-TAB: CONFIGURAR MERCADO PAGO / PIX -->
+                        <div class="admin-sub-panel" id="admin-pix-settings">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="adminPriceInput">Valor por Palpite (R$):</label>
+                                    <input type="number" id="adminPriceInput" min="0" step="0.50" value="5.00" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="adminKeyInput">Chave PIX (Manual Fallback):</label>
+                                    <input type="text" id="adminKeyInput" value="financeiro@empresa.com" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="adminMpTokenInput">Mercado Pago Access Token:</label>
+                                <textarea id="adminMpTokenInput" rows="3" placeholder="Insira o seu Access Token de Produção ou Testes"></textarea>
+                                <p class="help-text">Configurado com o seu token padrão do Mercado Pago. Para testar com outra conta, altere aqui.</p>
+                            </div>
+                            
+                            <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin: 12px 0;">
+                                <input type="checkbox" id="adminSimulatorInput" style="width: auto; height: auto; margin: 0;">
+                                <label for="adminSimulatorInput" style="cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">Ativar Modo Simulador (Evita erros de CORS no navegador local)</label>
+                            </div>
+                            
+                            <button class="btn btn-success btn-block" id="savePixSettingsBtn">
+                                <i data-lucide="save"></i> Salvar Configurações
+                            </button>
+                        </div>
+
+                        <!-- ADMIN SUB-TAB: GERENCIAR PALPITES -->
+                        <div class="admin-sub-panel" id="admin-manage-bets">
+                            <div class="admin-actions-bar">
+                                <h3>Gerenciamento de Participantes</h3>
+                                <button class="btn btn-danger btn-sm" id="resetAllDataBtn">
+                                    <i data-lucide="trash-2"></i> Resetar Todos os Dados
+                                </button>
+                            </div>
+                            
+                            <div class="bets-manage-container">
+                                <table class="admin-bets-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Participante</th>
+                                            <th>Pontos</th>
+                                            <th>Status PIX</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminBetsTableBody">
+                                        <!-- Dynamic list of participants and their pix payment approvals -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: DETALHES DO JOGO & PALPITES DE OUTROS (REVELADOS APÓS INÍCIO) -->
+        <div class="modal-overlay" id="betsDetailModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 id="betsDetailTitle">Palpites - Brasil x Argentina</h3>
+                    <button class="close-btn" id="closeBetsDetailBtn">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="bets-detail-body">
+                    <p class="info-alert" id="betsDetailAlert">
+                        <i data-lucide="alert-circle"></i> Os palpites dos outros participantes só são revelados após o início do jogo para evitar cópias!
+                    </p>
+                    <table class="bets-detail-table">
+                        <thead>
+                            <tr>
+                                <th>Participante</th>
+                                <th>Palpite</th>
+                                <th>Pontos Conquistados</th>
+                            </tr>
+                        </thead>
+                        <tbody id="betsDetailTableBody">
+                            <!-- Dynamic bets list -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTIFICATION TOAST -->
+        <div class="toast" id="toast">
+            <span id="toastMsg">Mensagem de notificação</span>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script src="app.js?v=1.0.2"></script>
+</body>
+</html>
