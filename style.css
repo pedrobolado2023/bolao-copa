@@ -849,7 +849,7 @@ tr:nth-child(3) .rank-badge {
     position: fixed;
     bottom: 24px;
     left: 50%;
-    transform: translateX(-50%) translateY(120px);
+    transform: translateX(-50%) translateY(260px);
     width: calc(100% - 32px);
     max-width: 800px;
     background: rgba(18, 25, 47, 0.85);
@@ -1528,7 +1528,7 @@ tr:nth-child(3) .rank-badge {
    ========================================== */
 @media (max-width: 768px) {
     body {
-        padding-bottom: 140px; /* More space for the cart bar on mobile */
+        padding-bottom: 190px; /* More space for the cart bar on mobile */
     }
 
     .main-header {
